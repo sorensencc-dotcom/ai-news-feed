@@ -1,0 +1,266 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+
+const allBriefings = await getCollection('briefings');
+const briefings = allBriefings.sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+---
+
+<Layout title="AI Intelligence Radar | Daily Operator Briefings">
+  <div class="hero">
+    <div class="badge">OPERATOR INTELLIGENCE</div>
+    <h1>Daily AI Synthesis Radar</h1>
+    <p class="subtitle">
+      Automated synthesis across 8 curated primary sources with confidence scoring, 7-day velocity tracking, and verified primary citations.
+    </p>
+  </div>
+
+  <section class="briefings-list">
+    <h2>Recent Briefings</h2>
+
+    {briefings.length === 0 ? (
+      <p class="empty-state">No briefings published yet.</p>
+    ) : (
+      <div class="cards-grid">
+        {briefings.map((briefing) => {
+          const { title, date, confidenceScore, sourcesEvaluated, themes, summary } = briefing.data;
+          const confidencePercent = Math.round(confidenceScore * 100);
+
+          return (
+            <article class="card">
+              <div class="card-header">
+                <time datetime={date.toISOString()}>{formatDate(date)}</time>
+                <div class="metrics">
+                  <span class="metric-pill">
+                    <strong>{confidencePercent}%</strong> confidence
+                  </span>
+                  <span class="metric-pill">
+                    <strong>{sourcesEvaluated}</strong> sources
+                  </span>
+                </div>
+              </div>
+
+              <h3>
+                <a href={`/briefings/${briefing.slug}`}>{title}</a>
+              </h3>
+
+              {summary && <p class="card-summary">{summary}</p>}
+
+              <div class="themes-preview">
+                <span class="themes-label">Themes tracked:</span>
+                <ul class="theme-tags">
+                  {themes.map((theme) => (
+                    <li class={`theme-tag ${theme.delta7d}`}>
+                      <span class="delta-indicator">
+                        {theme.delta7d === 'accelerating' ? '▲' : theme.delta7d === 'decelerating' ? '▼' : '●'}
+                      </span>
+                      {theme.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div class="card-footer">
+                <a href={`/briefings/${briefing.slug}`} class="read-more">
+                  Read full briefing →
+                </a>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    )}
+  </section>
+</Layout>
+
+<style>
+  .hero {
+    margin-bottom: 2.5rem;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background-color: var(--tag-research);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-mono);
+  }
+
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 680px;
+    line-height: 1.5;
+  }
+
+  .briefings-list h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.25rem;
+    color: var(--text-primary);
+  }
+
+  .cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  time {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .metrics {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .metric-pill {
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+  }
+
+  .metric-pill strong {
+    color: var(--text-primary);
+  }
+
+  h3 {
+    font-size: 1.35rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h3 a {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  h3 a:hover {
+    color: var(--accent);
+  }
+
+  .card-summary {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .themes-preview {
+    margin-bottom: 1rem;
+  }
+
+  .themes-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    font-family: var(--font-mono);
+  }
+
+  .theme-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+  }
+
+  .theme-tag {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background-color: var(--bg-subtle);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .theme-tag.accelerating {
+    border-color: #388bfd66;
+    color: #79c0ff;
+  }
+
+  .theme-tag.accelerating .delta-indicator {
+    color: #3fb950;
+  }
+
+  .theme-tag.decelerating .delta-indicator {
+    color: #f85149;
+  }
+
+  .theme-tag.stable .delta-indicator {
+    color: var(--text-muted);
+  }
+
+  .card-footer {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .read-more {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .read-more:hover {
+    text-decoration: underline;
+  }
+</style>
